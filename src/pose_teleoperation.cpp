@@ -37,6 +37,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.joystick.topic);
   joystick_handler_->register_on_press(params_.joystick.calibrate_frame_button, [this]() {
       try {
+        RCLCPP_DEBUG(this->get_logger(), "Calibrate frame");
         calibrate_frame();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
@@ -44,6 +45,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
   joystick_handler_->register_on_press(params_.joystick.teleoperation_button, [this]() {
       try {
+        RCLCPP_DEBUG(this->get_logger(), "Start teleoperation");
         start_teleoperation();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
@@ -51,6 +53,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
   joystick_handler_->register_on_release(params_.joystick.teleoperation_button, [this]() {
       try {
+        RCLCPP_DEBUG(this->get_logger(), "Stop teleoperation");
         stop_teleoperation();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to stop teleoperation: %s", e.what());
@@ -75,20 +78,12 @@ PoseTeleoperation::~PoseTeleoperation() {}
 
 void PoseTeleoperation::calibrate_frame()
 {
-  RCLCPP_DEBUG(this->get_logger(), "Calibrate frame");
-
-  auto frame_transform = get_frame_transform();
-  if (!frame_transform) {
-    throw std::runtime_error("Could not get frame transform");
-  }
-  frame_transform_ = frame_transform;
+  frame_transform_ = get_frame_transform();
   broadcast_frame_transform();
 }
 
 void PoseTeleoperation::start_teleoperation()
 {
-  RCLCPP_DEBUG(this->get_logger(), "Start teleoperation");
-
   params_ = param_listener_->get_params();
   geometry_msgs::msg::TransformStamped b_T_e_msg, b_T_c_msg;
 
@@ -126,8 +121,6 @@ void PoseTeleoperation::start_teleoperation()
 
 void PoseTeleoperation::stop_teleoperation()
 {
-  RCLCPP_DEBUG(this->get_logger(), "Stop teleoperation");
-
   e_T_c_.reset();
 }
 

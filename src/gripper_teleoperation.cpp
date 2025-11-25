@@ -61,7 +61,11 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
     joystick_handler_->register_on_press(
       params_.joystick.toggle_button,
       [this]() {
-        set_state(1.0 - current_state_);
+        if (current_state_ <= 0.9) {
+          set_state(1.0);
+        } else {
+          set_state(0.0);
+        }
       });
   }
   // Axis control

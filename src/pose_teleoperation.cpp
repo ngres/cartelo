@@ -1,0 +1,205 @@
+#include "cartelo/pose_teleoperation.hpp"
+
+#include <chrono>
+#include <exception>
+
+#include "rclcpp_components/register_node_macro.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
+namespace cartelo
+{
+
+PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
+: Node("pose_teleoperation", options)
+{
+  param_listener_ = std::make_shared<pose_teleoperation::ParamListener>(get_node_parameters_interface());
+  params_ = param_listener_->get_params();
+
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+
+  joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.joystick.topic);
+  
+  joystick_handler_->register_on_press(params_.joystick.calibrate_frame_button, [this]() {
+    try {
+      calibrate_frame();
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
+    }
+  });
+
+  joystick_handler_->register_on_press(params_.joystick.teleoperation_button, [this]() {
+    try {
+      start_teleoperation();
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
+    }
+  });
+  joystick_handler_->register_on_release(params_.joystick.teleoperation_button, [this]() {
+    try {
+      stop_teleoperation();
+    } catch (const std::exception & e) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to stop teleoperation: %s", e.what());
+    }
+  });
+
+  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
+    params_.target_pose_topic, 3);
+
+  double period = 1.0 / params_.publishing_rate;
+  pose_timer_ = this->create_wall_timer(
+    std::chrono::duration<double>(period),
+    std::bind(&PoseTeleoperation::publish_target_pose, this));
+
+  frame_timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(100), // 10 Hz is sufficient for static transforms
+    std::bind(&PoseTeleoperation::broadcast_frame_transform, this));
+}
+
+PoseTeleoperation::~PoseTeleoperation() {}
+
+
+void PoseTeleoperation::calibrate_frame()
+{
+  RCLCPP_DEBUG(this->get_logger(), "Calibrate frame");
+
+  auto frame_transform = get_frame_transform();
+  if (!frame_transform) {
+    throw std::runtime_error("Could not get frame transform");
+  }
+  frame_transform_ = frame_transform;
+  broadcast_frame_transform();
+}
+
+void PoseTeleoperation::start_teleoperation()
+{
+  RCLCPP_DEBUG(this->get_logger(), "Start teleoperation");
+
+  params_ = param_listener_->get_params();
+  geometry_msgs::msg::TransformStamped b_T_e_msg, b_T_c_msg;
+
+  try {
+    b_T_e_msg = tf_buffer_->lookupTransform(
+      params_.base_frame_id,
+      params_.end_effector_frame_id,
+      tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    throw std::runtime_error(
+      "Could not transform " + params_.base_frame_id + " to " + params_.end_effector_frame_id + ": " + ex.what());
+  }
+
+  try {
+    b_T_c_msg = tf_buffer_->lookupTransform(
+      params_.base_frame_id,
+      params_.controller_frame_id,
+      tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    throw std::runtime_error(
+      "Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id + ": " + ex.what());
+  }
+
+  tf2::Transform b_T_e, b_T_c;
+  tf2::fromMsg(b_T_e_msg.transform, b_T_e);
+  tf2::fromMsg(b_T_c_msg.transform, b_T_c);
+
+  tf2::Transform delta;
+  delta.setOrigin(b_T_c.getOrigin() - b_T_e.getOrigin());
+  delta.setRotation(b_T_e.getRotation().inverse() * b_T_c.getRotation());
+  e_T_c_ = delta;
+}
+
+void PoseTeleoperation::stop_teleoperation()
+{
+  RCLCPP_DEBUG(this->get_logger(), "Stop teleoperation");
+
+  e_T_c_.reset();
+}
+
+std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame_transform()
+{
+  params_ = param_listener_->get_params();
+  geometry_msgs::msg::TransformStamped v_T_c_msg;
+
+  try {
+    v_T_c_msg = tf_buffer_->lookupTransform(
+      params_.virtual_world_frame_id,
+      params_.controller_frame_id,
+      tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    throw std::runtime_error(
+      "Could not transform " + params_.virtual_world_frame_id + " to " + params_.controller_frame_id + ": " + ex.what());
+  }
+
+  geometry_msgs::msg::TransformStamped v_T_b;
+  v_T_b.header.stamp = v_T_c_msg.header.stamp;
+  v_T_b.header.frame_id = v_T_c_msg.header.frame_id;
+  v_T_b.child_frame_id = params_.base_frame_id;
+
+  tf2::Transform v_T_c;
+  tf2::fromMsg(v_T_c_msg.transform, v_T_c);
+
+  tf2::Matrix3x3 rot_mat(
+     0, -1,  0,
+     0,  0,  1,
+    -1,  0,  0);
+  tf2::Vector3 trans_vec(0, 0, 0);
+  tf2::Transform conversion_transform(rot_mat, trans_vec);
+
+  tf2::Transform v_T_b_transform = v_T_c * conversion_transform;
+  v_T_b.transform = tf2::toMsg(v_T_b_transform);
+
+  return v_T_b;
+}
+
+void PoseTeleoperation::broadcast_frame_transform()
+{
+  if (!frame_transform_) {
+    // Silently ignore, since calibration has not been performed
+    return;
+  }
+
+  frame_transform_->header.stamp = this->now();
+  tf_broadcaster_->sendTransform(*frame_transform_);
+}
+
+void PoseTeleoperation::publish_target_pose()
+{
+  if (!frame_transform_ || !e_T_c_) {
+    // Silently ignore, since teleoperation is not active
+    return;
+  }
+
+  params_ = param_listener_->get_params();
+  geometry_msgs::msg::TransformStamped b_T_c_msg;
+
+  try {
+    b_T_c_msg = tf_buffer_->lookupTransform(
+      params_.base_frame_id,
+      params_.controller_frame_id,
+      tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    throw std::runtime_error(
+      "Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id + ": " + ex.what());
+  }
+
+  geometry_msgs::msg::PoseStamped msg;
+  msg.header.stamp = this->now();
+  msg.header.frame_id = params_.base_frame_id;
+
+  tf2::Transform b_T_c;
+  tf2::fromMsg(b_T_c_msg.transform, b_T_c);
+
+  tf2::Transform b_T_e = b_T_c * e_T_c_.value().inverse();
+
+  msg.pose.position.x = b_T_e.getOrigin().x();
+  msg.pose.position.y = b_T_e.getOrigin().y();
+  msg.pose.position.z = b_T_e.getOrigin().z();
+  msg.pose.orientation = tf2::toMsg(b_T_e.getRotation());
+
+  pose_pub_->publish(msg);
+}
+
+}  // namespace cartelo
+
+RCLCPP_COMPONENTS_REGISTER_NODE(cartelo::PoseTeleoperation)

@@ -15,7 +15,7 @@ flowchart LR
     c([Cartelo])
     ik([IK])
     j([Joints])
-    i --> c --> ik --> j
+    i --> c --> ik <-> j
 ```
 
 Cartelo can take any [tf2](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Tf2/Tf2-Main.html) frame and an optional `Joy` topic and output a desired target pose to an inverse kinematic node (like MoveIt2 Servo, Cartesian Controllers, CRISP Controllers, etc.).

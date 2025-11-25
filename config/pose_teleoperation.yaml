@@ -1,0 +1,38 @@
+pose_teleoperation:
+  virtual_world_frame_id:
+    type: string
+    default_value: "teleop_world"
+    description: "Frame ID for the virtual world (reference frame for the 3D tracking controller)"
+  controller_frame_id:
+    type: string
+    default_value: "LHR-FF29DD46"
+    description: "Frame ID for the 3D tracking controller"
+  base_frame_id:
+    type: string
+    default_value: "base_link"
+    description: "Frame ID for the robot arm base"
+  end_effector_frame_id:
+    type: string
+    default_value: "gripper_link"
+    description: "Frame ID for the robot arm end effector"
+  joystick:
+    topic:
+      type: string
+      default_value: "joy"
+      description: "Topic for joystick input"
+    calibrate_frame_button:
+      type: int
+      default_value: 6
+      description: "Button to calibrate the frame"
+    teleoperation_button:
+      type: int
+      default_value: 7
+      description: "Button to start/stop teleoperation (while being pressed)"
+  target_pose_topic:
+    type: string
+    default_value: "/target_end_effector_pose"
+    description: "Topic to publish the target pose of the robot arm end effector"
+  publishing_rate:
+    type: int
+    default_value: 100
+    description: "Rate at which to publish target pose in Hz"

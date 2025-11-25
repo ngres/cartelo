@@ -2,18 +2,15 @@
 #define CARTELO__POSE_TELEOPERATION_HPP_
 
 #include <memory>
-#include <string>
-#include <vector>
 
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/joy.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2_ros/transform_listener.hpp"
+
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/transform_broadcaster.h"
-
 #include "cartelo/pose_teleoperation_parameters.hpp"
+#include "cartelo/joystick_handler.hpp"
 
 namespace cartelo
 {
@@ -25,12 +22,6 @@ public:
   virtual ~PoseTeleoperation();
 
 private:
-  /**
-   * @brief Callback function for joystick events.
-   * 
-   * @param msg The joystick message.
-   */
-  void joystick_event_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
 
   /**
    * @brief Calibrate the reference frame for teleoperation by holding the controller close to the robot base.
@@ -64,10 +55,10 @@ private:
 
   std::optional<geometry_msgs::msg::TransformStamped> get_frame_transform();
 
-  std::shared_ptr<ParamListener> param_listener_;
-  Params params_;
+  std::shared_ptr<pose_teleoperation::ParamListener> param_listener_;
+  pose_teleoperation::Params params_;
 
-  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  std::shared_ptr<JoystickHandler> joystick_handler_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   rclcpp::TimerBase::SharedPtr pose_timer_;
   rclcpp::TimerBase::SharedPtr frame_timer_;
@@ -76,8 +67,7 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
-  std::vector<int> last_button_cmds_;
-  std::optional<tf2::Transform> transform_delta_;
+  std::optional<tf2::Transform> e_T_c_;
   std::optional<geometry_msgs::msg::TransformStamped> frame_transform_;
 };
 

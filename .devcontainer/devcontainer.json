@@ -15,9 +15,10 @@
             "extensions": [
                 "ms-python.python",
                 "ms-vscode.cmake-tools",
-                "ms-vscode.cpptools",
+                "llvm-vs-code-extensions.vscode-clangd",
                 "streetsidesoftware.code-spell-checker",
-                "ranch-hand-robotics.rde-ros-2"
+                "ranch-hand-robotics.rde-ros-2",
+                "cschlosser.doxdocgen"
             ],
             "settings": {
                 "remote.autoForwardPorts": false

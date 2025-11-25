@@ -59,6 +59,14 @@ public:
    */
   void register_on_release(int button_index, Callback cb);
 
+  /**
+   * @brief Register a callback to be called when an axis changes.
+   *
+   * @param axis_index Index of the axis.
+   * @param cb Callback function taking the new axis value.
+   */
+  void register_axis(int axis_index, std::function<void(float)> cb);
+
 private:
   void joystick_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
 
@@ -66,6 +74,7 @@ private:
   std::vector<int> last_buttons_;
   std::map<int, std::vector<Callback>> on_press_callbacks_;
   std::map<int, std::vector<Callback>> on_release_callbacks_;
+  std::map<int, std::vector<std::function<void(float)>>> axis_callbacks_;
 };
 
 }  // namespace cartelo

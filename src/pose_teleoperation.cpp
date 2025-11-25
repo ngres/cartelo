@@ -35,7 +35,6 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.joystick.topic);
-
   joystick_handler_->register_on_press(params_.joystick.calibrate_frame_button, [this]() {
       try {
         calibrate_frame();
@@ -43,7 +42,6 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
         RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
       }
   });
-
   joystick_handler_->register_on_press(params_.joystick.teleoperation_button, [this]() {
       try {
         start_teleoperation();

@@ -34,9 +34,14 @@ void JoystickHandler::register_on_release(int button_index, Callback cb)
   on_release_callbacks_[button_index].push_back(cb);
 }
 
+void JoystickHandler::register_axis(int axis_index, std::function<void(float)> cb)
+{
+  axis_callbacks_[axis_index].push_back(cb);
+}
+
 void JoystickHandler::joystick_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
-  if (msg->buttons.empty()) {
+  if (msg->buttons.empty() && msg->axes.empty()) {
     return;
   }
 
@@ -60,6 +65,14 @@ void JoystickHandler::joystick_callback(const sensor_msgs::msg::Joy::SharedPtr m
           cb();
         }
       }
+    }
+  }
+
+  for (size_t i = 0; i < msg->axes.size(); ++i) {
+    if (axis_callbacks_.count(i)) {
+        for (const auto & cb : axis_callbacks_[i]) {
+            cb(msg->axes[i]);
+        }
     }
   }
 

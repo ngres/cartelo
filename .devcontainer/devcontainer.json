@@ -21,7 +21,10 @@
                 "cschlosser.doxdocgen"
             ],
             "settings": {
-                "remote.autoForwardPorts": false
+                "remote.autoForwardPorts": false,
+                "clangd.arguments": [
+                    "--compile-commands-dir=\"~/ros2_ws/build\""
+                ]
             }
         }
     }

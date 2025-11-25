@@ -18,7 +18,7 @@ pose_teleoperation:
   joystick:
     topic:
       type: string
-      default_value: "joy"
+      default_value: "/joy"
       description: "Topic for joystick input"
     calibrate_frame_button:
       type: int
@@ -28,6 +28,7 @@ pose_teleoperation:
       type: int
       default_value: 7
       description: "Button to start/stop teleoperation (while being pressed)"
+  
   target_pose_topic:
     type: string
     default_value: "/target_end_effector_pose"

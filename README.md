@@ -1,6 +1,12 @@
 # Cartelo
 
-Teleoperate ROS 2 robot arms using cartesian coordinate inputs in real-time. 
+Teleoperate ROS 2 robot arms using cartesian coordinate inputs from 3D trackers (VR controllers, smartphones, etc.).
+
+> [!WARNING]
+> This project is still under construction 🚧
+> My goal is to create a LeRobot fine tuning dataset using an UR12e arm and a HTC Vive controller. If you are interested in combining LeRobot with ROS 2 check out [LeROS2](https://github.com/Nico0302/leros2).
+
+## HTC VIVE <> SO-101 Setup
 
 ```bash
 sudo curl -fsSL https://raw.githubusercontent.com/cntools/libsurvive/master/useful_files/81-vive.rules \

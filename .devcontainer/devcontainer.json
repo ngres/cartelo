@@ -1,0 +1,27 @@
+{
+    "name": "ROS 2 Cartelo",
+    "privileged": true,
+    "remoteUser": "ros",
+    "dockerComposeFile": "./compose.yaml",
+    "workspaceFolder": "/home/ros/ros2_ws/src/cartelo",
+    "service": "devcontainer",
+    "portsAttributes": {
+        "*": {
+            "onAutoForward": "ignore"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools",
+                "streetsidesoftware.code-spell-checker",
+                "ranch-hand-robotics.rde-ros-2"
+            ],
+            "settings": {
+                "remote.autoForwardPorts": false
+            }
+        }
+    }
+}

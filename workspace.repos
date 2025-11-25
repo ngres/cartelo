@@ -1,0 +1,13 @@
+repositories:
+  cartesian_controllers:
+    type: git
+    url: https://github.com/fzi-forschungszentrum-informatik/cartesian_controllers.git
+    version: ros2
+  ros2_so101:
+    type: git
+    url: https://github.com/Nico0302/ros2_so101.git
+    version: main
+  libsurvive_ros2:
+    type: git
+    url: https://github.com/asymingt/libsurvive_ros2.git
+    version: main

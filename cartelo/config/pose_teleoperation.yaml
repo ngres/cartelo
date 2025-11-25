@@ -1,0 +1,30 @@
+cartelo:
+  pose_teleoperation:
+    virtual_world_frame_id:
+      type: string
+      default_value: "teleop_world"
+      description: "Frame ID for the virtual world"
+    controller_frame_id:
+      type: string
+      default_value: "LHR-FF29DD46"
+      description: "Frame ID for the controller"
+    base_frame_id:
+      type: string
+      default_value: "base_link"
+      description: "Frame ID for the robot base"
+    end_effector_frame_id:
+      type: string
+      default_value: "gripper_link"
+      description: "Frame ID for the end effector"
+    joy_topic:
+      type: string
+      default_value: "joy"
+      description: "Topic for joystick input"
+    target_pose_topic:
+      type: string
+      default_value: "/target_end_effector_pose"
+      description: "Topic to publish target pose"
+    publishing_rate:
+      type: int
+      default_value: 100
+      description: "Rate at which to publish target pose in Hz"

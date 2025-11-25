@@ -1,0 +1,10 @@
+freeglut3-dev
+liblapacke-dev
+libopenblas-dev
+libpcap-dev
+libusb-1.0-0-dev
+libx11-dev
+zlib1g-dev
+libpoco-dev
+libeigen3-dev
+ros-${ROS_DISTRO}-rmw-cyclonedds-cpp

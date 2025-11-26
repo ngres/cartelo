@@ -24,19 +24,19 @@ JoystickHandler::JoystickHandler(rclcpp::Node * node, const std::string & topic_
     std::bind(&JoystickHandler::joystick_callback, this, std::placeholders::_1));
 }
 
-void JoystickHandler::register_on_press(int button_index, Callback cb)
+void JoystickHandler::register_on_press(int button_index, ButtonCallback cb)
 {
   on_press_callbacks_[button_index].push_back(cb);
 }
 
-void JoystickHandler::register_on_release(int button_index, Callback cb)
+void JoystickHandler::register_on_release(int button_index, ButtonCallback cb)
 {
   on_release_callbacks_[button_index].push_back(cb);
 }
 
-void JoystickHandler::register_axis(int axis_index, std::function<void(float)> cb)
+void JoystickHandler::register_on_axis_change(int axis_index, std::function<void(float)> cb, float threshold)
 {
-  axis_callbacks_[axis_index].push_back(cb);
+  axis_configs_[axis_index].push_back(std::make_pair(cb, threshold));
 }
 
 void JoystickHandler::joystick_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
@@ -47,6 +47,10 @@ void JoystickHandler::joystick_callback(const sensor_msgs::msg::Joy::SharedPtr m
 
   if (last_buttons_.empty()) {
     last_buttons_.resize(msg->buttons.size(), 0);
+  }
+
+  if (last_axes_.empty()) {
+    last_axes_.resize(msg->axes.size(), 0.0);
   }
 
   for (size_t i = 0; i < msg->buttons.size(); ++i) {
@@ -69,14 +73,17 @@ void JoystickHandler::joystick_callback(const sensor_msgs::msg::Joy::SharedPtr m
   }
 
   for (size_t i = 0; i < msg->axes.size(); ++i) {
-    if (axis_callbacks_.count(i)) {
-      for (const auto & cb : axis_callbacks_[i]) {
-        cb(msg->axes[i]);
+    if (axis_configs_.count(i)) {
+      for (const auto & config : axis_configs_[i]) {
+        if (std::abs(msg->axes[i] - last_axes_[i]) > config.second) {
+          config.first(msg->axes[i]);
+        }
       }
     }
   }
 
   last_buttons_ = msg->buttons;
+  last_axes_ = msg->axes;
 }
 
 }  // namespace cartelo

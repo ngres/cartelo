@@ -30,7 +30,7 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
   gripper_client_ = rclcpp_action::create_client<control_msgs::action::GripperCommand>(this,
       params_.command_topic);
 
-  if (params_.state_topic != "") {
+  if (!params_.state_topic.empty()) {
     state_pub_ = this->create_publisher<std_msgs::msg::Float64>(params_.state_topic, 10);
   }
   if (params_.publishing_rate > 0) {
@@ -70,7 +70,7 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
   }
   // Axis control
   if (params_.joystick.gripper_axis >= 0) {
-    joystick_handler_->register_axis(
+    joystick_handler_->register_on_axis_change(
       params_.joystick.gripper_axis,
       [this](float val) {
         double state = (val + 1.0) / 2.0;

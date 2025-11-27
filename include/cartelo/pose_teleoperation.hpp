@@ -80,7 +80,7 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
-  std::optional<tf2::Transform> e_T_c_;
+  std::optional<tf2::Transform> delta_;
   std::optional<geometry_msgs::msg::TransformStamped> frame_transform_;
 };
 

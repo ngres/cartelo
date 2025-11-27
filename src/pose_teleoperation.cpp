@@ -116,12 +116,12 @@ void PoseTeleoperation::start_teleoperation()
   tf2::Transform delta;
   delta.setOrigin(b_T_c.getOrigin() - b_T_e.getOrigin());
   delta.setRotation(b_T_e.getRotation().inverse() * b_T_c.getRotation());
-  e_T_c_ = delta;
+  delta_ = delta;
 }
 
 void PoseTeleoperation::stop_teleoperation()
 {
-  e_T_c_.reset();
+  delta_.reset();
 }
 
 std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame_transform()
@@ -174,7 +174,7 @@ void PoseTeleoperation::broadcast_frame_transform()
 
 void PoseTeleoperation::publish_target_pose()
 {
-  if (!frame_transform_ || !e_T_c_) {
+  if (!frame_transform_ || !delta_) {
     // Silently ignore, since teleoperation is not active
     return;
   }
@@ -200,7 +200,10 @@ void PoseTeleoperation::publish_target_pose()
   tf2::Transform b_T_c;
   tf2::fromMsg(b_T_c_msg.transform, b_T_c);
 
-  tf2::Transform b_T_e = b_T_c * e_T_c_.value().inverse();
+  tf2::Transform b_T_e = tf2::Transform::getIdentity();
+
+  b_T_e.setOrigin(b_T_c.getOrigin() - delta_->getOrigin());
+  b_T_e.setRotation(b_T_c.getRotation() * delta_->getRotation().inverse());
 
   msg.pose.position.x = b_T_e.getOrigin().x();
   msg.pose.position.y = b_T_e.getOrigin().y();

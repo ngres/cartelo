@@ -15,7 +15,8 @@
 #include "cartelo/gripper_teleoperation.hpp"
 
 #include "rclcpp_components/register_node_macro.hpp"
-#include "control_msgs/action/gripper_command.hpp"
+#include "control_msgs/action/parallel_gripper_command.hpp"
+#include <cstdlib>
 
 namespace cartelo
 {
@@ -27,8 +28,8 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
     std::make_shared<gripper_teleoperation::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
-  gripper_client_ = rclcpp_action::create_client<control_msgs::action::GripperCommand>(this,
-      "gripper_command");
+  gripper_client_ = rclcpp_action::create_client<control_msgs::action::ParallelGripperCommand>(this,
+      params_.gripper_command_topic);
 
   if (params_.publishing_rate > 0) {
     state_pub_ = this->create_publisher<std_msgs::msg::Float64>("gripper_state", 10);
@@ -71,8 +72,7 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
     joystick_handler_->register_on_axis_change(
       params_.joystick.gripper_axis,
       [this](float val) {
-        // [-1.0, 1.0] -> [0.0, 1.0]
-        double state = (val + 1.0) / 2.0;
+        double state = std::abs(1 - val);
         state = std::max(0.0, std::min(1.0, state));
         set_state(state);
       });
@@ -89,9 +89,10 @@ void GripperTeleoperation::set_state(double state)
 
 void GripperTeleoperation::send_command()
 {
-  auto goal_msg = control_msgs::action::GripperCommand::Goal();
-  goal_msg.command.position = current_state_ * params_.max_position;
-  goal_msg.command.max_effort = 0.0;
+  auto goal_msg = control_msgs::action::ParallelGripperCommand::Goal();
+  goal_msg.command.name.push_back(params_.joint_name);
+  goal_msg.command.position.push_back(current_state_ * params_.max_value +
+    (1.0 - current_state_) * params_.min_value);
   gripper_client_->async_send_goal(goal_msg);
 }
 

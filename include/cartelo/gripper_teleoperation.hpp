@@ -19,7 +19,7 @@
 
 #include "rclcpp_action/rclcpp_action.hpp"
 
-#include "control_msgs/action/gripper_command.hpp"
+#include "control_msgs/action/parallel_gripper_command.hpp"
 #include "std_msgs/msg/float64.hpp"
 
 #include "cartelo/joystick_handler.hpp"
@@ -60,7 +60,7 @@ private:
   std::shared_ptr<JoystickHandler> joystick_handler_;
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr state_pub_;
 
-  rclcpp_action::Client<control_msgs::action::GripperCommand>::SharedPtr gripper_client_;
+  rclcpp_action::Client<control_msgs::action::ParallelGripperCommand>::SharedPtr gripper_client_;
 
   double current_state_{0.0}; // Current state of the gripper normalized between 0.0 and 1.0
   rclcpp::TimerBase::SharedPtr publish_state_timer_;

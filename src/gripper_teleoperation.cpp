@@ -28,18 +28,16 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
   params_ = param_listener_->get_params();
 
   gripper_client_ = rclcpp_action::create_client<control_msgs::action::GripperCommand>(this,
-      params_.command_topic);
+      "gripper_command");
 
-  if (!params_.state_topic.empty()) {
-    state_pub_ = this->create_publisher<std_msgs::msg::Float64>(params_.state_topic, 10);
-  }
   if (params_.publishing_rate > 0) {
+    state_pub_ = this->create_publisher<std_msgs::msg::Float64>("gripper_state", 10);
     publish_state_timer_ = this->create_wall_timer(
       std::chrono::milliseconds(1000 / params_.publishing_rate),
       std::bind(&GripperTeleoperation::publish_state, this));
   }
 
-  joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.joystick.topic);
+  joystick_handler_ = std::make_shared<JoystickHandler>(this);
   // Open button
   if (params_.joystick.open_button >= 0) {
     joystick_handler_->register_on_press(
@@ -73,6 +71,7 @@ GripperTeleoperation::GripperTeleoperation(const rclcpp::NodeOptions & options)
     joystick_handler_->register_on_axis_change(
       params_.joystick.gripper_axis,
       [this](float val) {
+        // [-1.0, 1.0] -> [0.0, 1.0]
         double state = (val + 1.0) / 2.0;
         state = std::max(0.0, std::min(1.0, state));
         set_state(state);

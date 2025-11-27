@@ -34,8 +34,8 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
-  joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.joystick.topic);
-  joystick_handler_->register_on_press(params_.joystick.calibrate_frame_button, [this]() {
+  joystick_handler_ = std::make_shared<JoystickHandler>(this);
+  joystick_handler_->register_on_press(params_.joystick.calibrate_button, [this]() {
       try {
         RCLCPP_DEBUG(this->get_logger(), "Calibrate frame");
         calibrate_frame();
@@ -43,7 +43,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
         RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
       }
   });
-  joystick_handler_->register_on_press(params_.joystick.teleoperation_button, [this]() {
+  joystick_handler_->register_on_press(params_.joystick.teleoperate_button, [this]() {
       try {
         RCLCPP_DEBUG(this->get_logger(), "Start teleoperation");
         start_teleoperation();
@@ -51,7 +51,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
         RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
       }
   });
-  joystick_handler_->register_on_release(params_.joystick.teleoperation_button, [this]() {
+  joystick_handler_->register_on_release(params_.joystick.teleoperate_button, [this]() {
       try {
         RCLCPP_DEBUG(this->get_logger(), "Stop teleoperation");
         stop_teleoperation();
@@ -61,7 +61,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
 
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-    params_.target_pose_topic, 3);
+    "target_pose", 3);
 
   double period = 1.0 / params_.publishing_rate;
   pose_timer_ = this->create_wall_timer(

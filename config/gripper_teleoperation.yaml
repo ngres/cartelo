@@ -1,9 +1,5 @@
 gripper_teleoperation:
   joystick:
-    topic: 
-      type: string
-      default_value: "/joy"
-      description: "Topic for joystick input"
     open_button: 
       type: int
       default_value: 0
@@ -21,20 +17,10 @@ gripper_teleoperation:
       default_value: 2
       description: "Axis to control the gripper position for continuous control"
 
-  command_topic:
-    type: string
-    default_value: "/gripper_command"
-    description: "Topic name for publishing the gripper action command"
-
   max_position:
     type: double
     default_value: 0.01
     description: "Maximum position for the gripper in meters"
-
-  state_topic:
-    type: string
-    default_value: "/gripper_state"
-    description: "Optional topic name for publishing the current controller gripper state as a normalized value between 0.0 and 1.0"
 
   publishing_rate:
     type: int

@@ -52,7 +52,7 @@ public:
    * @param node ROS 2 node pointer.
    * @param topic_name Name referenceof the joystick topic to subscribe to.
    */
-  JoystickHandler(rclcpp::Node * node, const std::string & topic_name);
+  JoystickHandler(rclcpp::Node * node, const std::string & topic_name = "joy");
 
   /**
    * @brief Register a callback to be called when a button is pressed.

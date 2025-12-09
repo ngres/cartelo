@@ -5,6 +5,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import SetRemap, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
+from launch.conditions import IfCondition
 
 
 def generate_launch_description():
@@ -26,6 +27,11 @@ def generate_launch_description():
             description="Use Gazebo sim",
         ),
         DeclareLaunchArgument(
+            "use_vive",
+            default_value="false",
+            description="Use Vive system",
+        ),
+        DeclareLaunchArgument(
             "use_fake_hardware",
             default_value="false",
             description="Use mock system",
@@ -43,14 +49,7 @@ def generate_launch_description():
     use_sim = LaunchConfiguration("use_sim")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     controller_frame_id = LaunchConfiguration("controller_frame_id")
-
-    vive_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution(
-                [FindPackageShare("cartelo"), "launch", "demo_vive.launch.py"]
-            )
-        )
-    )
+    use_vive = LaunchConfiguration("use_vive")
 
     so101_bringup_launch = GroupAction(
         actions=[
@@ -83,8 +82,12 @@ def generate_launch_description():
         package="cartelo",
         plugin="cartelo::PoseTeleoperation",
         name="pose_teleoperation",
+        remappings=[
+            ("/joy", "/libsurvive/joy"),
+        ],
         parameters=[
             {
+                "virtual_world_frame_id": "libsurvive_world",
                 "controller_frame_id": controller_frame_id,
                 "end_effector_frame_id": "gripper_frame_link",
                 "bounds.z_min": 0.01,
@@ -114,6 +117,9 @@ def generate_launch_description():
         package="cartelo",
         plugin="cartelo::GripperTeleoperation",
         name="gripper_teleoperation",
+        remappings=[
+            ("/joy", "/libsurvive/joy"),
+        ],
         parameters=[
             {
                 "joint_name": "gripper",
@@ -132,13 +138,14 @@ def generate_launch_description():
         name="libsurvive_ros2_component",
         parameters=[
             {"driver_args": f"--v 100 --force-calibrate"},
-            {"tracking_frame": "teleop_world"},
+            {"tracking_frame": "libsurvive_world"},
             {"imu_topic": "imu"},
             {"joy_topic": "joy"},
             {"cfg_topic": "cfg"},
             {"lighthouse_rate": 4.0},
         ],
         extra_arguments=[{"use_intra_process_comms": True}],
+        condition=IfCondition(use_vive),
     )
 
     composed_node = ComposableNodeContainer(

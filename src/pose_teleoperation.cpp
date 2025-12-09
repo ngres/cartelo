@@ -181,15 +181,13 @@ void PoseTeleoperation::trigger_homing()
       
       trajectory_msgs::msg::JointTrajectoryPoint point;
       point.positions = params_.home.joint_positions;
-      point.time_from_start = rclcpp::Duration::from_seconds(5.0); // TODO: Make configurable?
+      point.time_from_start = rclcpp::Duration::from_seconds(5.0); // [TODO] make configurable (maybe use velocity)
       goal_msg.trajectory.points.push_back(point);
 
       auto send_goal_options = rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SendGoalOptions();
       send_goal_options.result_callback = [this](const rclcpp_action::ClientGoalHandle<control_msgs::action::FollowJointTrajectory>::WrappedResult & result) {
         if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
           RCLCPP_ERROR(this->get_logger(), "Homing trajectory failed");
-          // Even if it failed, we might want to try switching back? 
-          // For now, let's try to switch back to ensure we don't leave the robot in a bad state.
         }
 
         // 3. Switch back to cartesian controller

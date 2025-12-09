@@ -20,7 +20,7 @@ pose_teleoperation:
     type: bool
     default_value: False
     description: "Use relative poses for teleoperation (if false, absolute poses are used)"
-  
+
   joystick:
     calibrate_button:
       type: int
@@ -62,7 +62,7 @@ pose_teleoperation:
   bounds:
     enabled:
       type: bool
-      default_value: true
+      default_value: false
       description: "Enable boundary limits for the end effector position based on the base frame"
     x_min:
       type: double

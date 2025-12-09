@@ -37,7 +37,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   joystick_handler_ = std::make_shared<JoystickHandler>(this);
   joystick_handler_->register_on_press(params_.joystick.calibrate_button, [this]() {
       try {
-        RCLCPP_DEBUG(this->get_logger(), "Calibrate frame");
+        RCLCPP_INFO(this->get_logger(), "Calibrate frame");
         calibrate_frame();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
@@ -45,7 +45,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
   joystick_handler_->register_on_press(params_.joystick.teleoperate_button, [this]() {
       try {
-        RCLCPP_DEBUG(this->get_logger(), "Start teleoperation");
+        RCLCPP_INFO(this->get_logger(), "Start teleoperation");
         start_teleoperation();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
@@ -53,7 +53,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
   joystick_handler_->register_on_release(params_.joystick.teleoperate_button, [this]() {
       try {
-        RCLCPP_DEBUG(this->get_logger(), "Stop teleoperation");
+        RCLCPP_INFO(this->get_logger(), "Stop teleoperation");
         stop_teleoperation();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to stop teleoperation: %s", e.what());
@@ -61,7 +61,7 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
   });
   joystick_handler_->register_on_press(params_.joystick.home_button, [this]() {
       try {
-        RCLCPP_DEBUG(this->get_logger(), "Trigger homing");
+        RCLCPP_INFO(this->get_logger(), "Trigger homing");
         trigger_homing();
       } catch (const std::exception & e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to trigger homing: %s", e.what());
@@ -233,14 +233,15 @@ std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame
         params_.controller_frame_id + ": " + ex.what());
   }
 
-  geometry_msgs::msg::TransformStamped v_T_b;
-  v_T_b.header.stamp = v_T_c_msg.header.stamp;
-  v_T_b.header.frame_id = v_T_c_msg.header.frame_id;
-  v_T_b.child_frame_id = params_.base_frame_id;
+  geometry_msgs::msg::TransformStamped b_T_v_msg;
+  b_T_v_msg.header.stamp = v_T_c_msg.header.stamp;
+  b_T_v_msg.header.frame_id = params_.base_frame_id;
+  b_T_v_msg.child_frame_id = v_T_c_msg.header.frame_id;
 
   tf2::Transform v_T_c;
   tf2::fromMsg(v_T_c_msg.transform, v_T_c);
 
+  // X -> -Z, Y -> -X, Z -> Y
   tf2::Matrix3x3 rot_mat(
     0, -1, 0,
     0, 0, 1,
@@ -249,9 +250,9 @@ std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame
   tf2::Transform conversion_transform(rot_mat, trans_vec);
 
   tf2::Transform v_T_b_transform = v_T_c * conversion_transform;
-  v_T_b.transform = tf2::toMsg(v_T_b_transform);
+  b_T_v_msg.transform = tf2::toMsg(v_T_b_transform.inverse());
 
-  return v_T_b;
+  return b_T_v_msg;
 }
 
 void PoseTeleoperation::broadcast_frame_transform()

@@ -55,10 +55,6 @@ private:
    * @brief Stop teleoperation by clearing the transform delta.
    *
    */
-  /**
-   * @brief Stop teleoperation by clearing the transform delta.
-   *
-   */
   void stop_teleoperation();
 
   /**
@@ -79,6 +75,11 @@ private:
    */
   void broadcast_frame_transform();
 
+  /**
+   * @brief Get the frame transform from the robot base to the teleoperation world frame.
+   * 
+   * @return std::optional<geometry_msgs::msg::TransformStamped> 
+   */
   std::optional<geometry_msgs::msg::TransformStamped> get_frame_transform();
 
   std::shared_ptr<pose_teleoperation::ParamListener> param_listener_;

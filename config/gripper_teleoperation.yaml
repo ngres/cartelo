@@ -5,11 +5,11 @@ gripper_teleoperation:
     description: "Frame ID for the 3D tracking controller"
 
   joystick:
-    open_button: 
+    open_button:
       type: int
       default_value: -1
       description: "Button to open the gripper for binary control (-1 to disable)"
-    close_button: 
+    close_button:
       type: int
       default_value: -1
       description: "Button to close the gripper for binary control (-1 to disable)"
@@ -23,7 +23,7 @@ gripper_teleoperation:
       description: "Axis to control the gripper position for continuous control (-1 to disable)"
     invert_axis:
       type: bool
-      default_value: true
+      default_value: false
       description: "Invert the joystick axis for gripper control"
     min_axis_value:
       type: double
@@ -58,4 +58,3 @@ gripper_teleoperation:
     type: int
     default_value: 100
     description: "Publishing rate for the gripper state topic in Hz (set to 0 to disable publishing)"
-    

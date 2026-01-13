@@ -35,7 +35,7 @@ namespace cartelo
 class PoseTeleoperation : public rclcpp::Node
 {
 public:
-  explicit PoseTeleoperation(const rclcpp::NodeOptions & options);
+  explicit PoseTeleoperation(const rclcpp::NodeOptions& options);
   virtual ~PoseTeleoperation();
 
 private:
@@ -77,8 +77,8 @@ private:
 
   /**
    * @brief Get the frame transform from the robot base to the teleoperation world frame.
-   * 
-   * @return std::optional<geometry_msgs::msg::TransformStamped> 
+   *
+   * @return std::optional<geometry_msgs::msg::TransformStamped>
    */
   std::optional<geometry_msgs::msg::TransformStamped> get_frame_transform();
 
@@ -97,6 +97,8 @@ private:
   std::optional<tf2::Transform> last_controller_transform_;
   std::optional<tf2::Transform> delta_;
   std::optional<geometry_msgs::msg::TransformStamped> frame_transform_;
+
+  bool is_homed_{ false };
 
   rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr switch_controller_client_;
   rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr follow_joint_trajectory_client_;

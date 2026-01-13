@@ -23,11 +23,9 @@
 namespace cartelo
 {
 
-PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
-: Node("pose_teleoperation", options)
+PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions& options) : Node("pose_teleoperation", options)
 {
-  param_listener_ =
-    std::make_shared<pose_teleoperation::ParamListener>(get_node_parameters_interface());
+  param_listener_ = std::make_shared<pose_teleoperation::ParamListener>(get_node_parameters_interface());
   params_ = param_listener_->get_params();
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -36,58 +34,68 @@ PoseTeleoperation::PoseTeleoperation(const rclcpp::NodeOptions & options)
 
   joystick_handler_ = std::make_shared<JoystickHandler>(this, params_.controller_frame_id);
   joystick_handler_->register_on_press(params_.joystick.calibrate_button, [this]() {
-      try {
-        RCLCPP_INFO(this->get_logger(), "Calibrate frame");
-        calibrate_frame();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
-      }
+    try
+    {
+      RCLCPP_INFO(this->get_logger(), "Calibrate frame");
+      calibrate_frame();
+    }
+    catch (const std::exception& e)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to calibrate frame: %s", e.what());
+    }
   });
   joystick_handler_->register_on_press(params_.joystick.teleoperate_button, [this]() {
-      try {
-        RCLCPP_INFO(this->get_logger(), "Start teleoperation");
-        start_teleoperation();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
-      }
+    try
+    {
+      RCLCPP_INFO(this->get_logger(), "Start teleoperation");
+      start_teleoperation();
+    }
+    catch (const std::exception& e)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to start teleoperation: %s", e.what());
+    }
   });
   joystick_handler_->register_on_release(params_.joystick.teleoperate_button, [this]() {
-      try {
-        RCLCPP_INFO(this->get_logger(), "Stop teleoperation");
-        stop_teleoperation();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to stop teleoperation: %s", e.what());
-      }
+    try
+    {
+      RCLCPP_INFO(this->get_logger(), "Stop teleoperation");
+      stop_teleoperation();
+    }
+    catch (const std::exception& e)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to stop teleoperation: %s", e.what());
+    }
   });
   joystick_handler_->register_on_press(params_.joystick.home_button, [this]() {
-      try {
-        RCLCPP_INFO(this->get_logger(), "Trigger homing");
-        trigger_homing();
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to trigger homing: %s", e.what());
-      }
+    try
+    {
+      RCLCPP_INFO(this->get_logger(), "Trigger homing");
+      trigger_homing();
+    }
+    catch (const std::exception& e)
+    {
+      RCLCPP_ERROR(this->get_logger(), "Failed to trigger homing: %s", e.what());
+    }
   });
 
-  switch_controller_client_ = this->create_client<controller_manager_msgs::srv::SwitchController>(
-    "controller_manager/switch_controller");
+  switch_controller_client_ =
+      this->create_client<controller_manager_msgs::srv::SwitchController>("controller_manager/switch_controller");
   follow_joint_trajectory_client_ = rclcpp_action::create_client<control_msgs::action::FollowJointTrajectory>(
-    this, params_.home.joint_controller_name + "/follow_joint_trajectory");
+      this, params_.home.joint_controller_name + "/follow_joint_trajectory");
 
-  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
-    "target_pose", 3);
+  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("target_pose", 3);
 
   double period = 1.0 / params_.update_rate;
-  pose_timer_ = this->create_wall_timer(
-    std::chrono::duration<double>(period),
-    std::bind(&PoseTeleoperation::publish_target_pose, this));
+  pose_timer_ = this->create_wall_timer(std::chrono::duration<double>(period),
+                                        std::bind(&PoseTeleoperation::publish_target_pose, this));
 
-  frame_timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(100), // 10 Hz is sufficient for static transforms
-    std::bind(&PoseTeleoperation::broadcast_frame_transform, this));
+  frame_timer_ = this->create_wall_timer(std::chrono::milliseconds(100),  // 10 Hz is sufficient for static transforms
+                                         std::bind(&PoseTeleoperation::broadcast_frame_transform, this));
 }
 
-PoseTeleoperation::~PoseTeleoperation() {}
-
+PoseTeleoperation::~PoseTeleoperation()
+{
+}
 
 void PoseTeleoperation::calibrate_frame()
 {
@@ -100,26 +108,24 @@ void PoseTeleoperation::start_teleoperation()
   params_ = param_listener_->get_params();
   geometry_msgs::msg::TransformStamped b_T_e_msg, b_T_c_msg;
 
-  try {
-    b_T_e_msg = tf_buffer_->lookupTransform(
-      params_.base_frame_id,
-      params_.end_effector_frame_id,
-      tf2::TimePointZero);
-  } catch (const tf2::TransformException & ex) {
-    throw std::runtime_error(
-      "Could not transform " + params_.base_frame_id + " to " + params_.end_effector_frame_id +
-        ": " + ex.what());
+  try
+  {
+    b_T_e_msg = tf_buffer_->lookupTransform(params_.base_frame_id, params_.end_effector_frame_id, tf2::TimePointZero);
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    throw std::runtime_error("Could not transform " + params_.base_frame_id + " to " + params_.end_effector_frame_id +
+                             ": " + ex.what());
   }
 
-  try {
-    b_T_c_msg = tf_buffer_->lookupTransform(
-      params_.base_frame_id,
-      params_.controller_frame_id,
-      tf2::TimePointZero);
-  } catch (const tf2::TransformException & ex) {
-    throw std::runtime_error(
-      "Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id + ": " +
-        ex.what());
+  try
+  {
+    b_T_c_msg = tf_buffer_->lookupTransform(params_.base_frame_id, params_.controller_frame_id, tf2::TimePointZero);
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    throw std::runtime_error("Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id +
+                             ": " + ex.what());
   }
 
   tf2::Transform b_T_e, b_T_c;
@@ -130,6 +136,8 @@ void PoseTeleoperation::start_teleoperation()
   delta.setOrigin(b_T_c.getOrigin() - b_T_e.getOrigin());
   delta.setRotation(b_T_e.getRotation().inverse() * b_T_c.getRotation());
   delta_ = delta;
+
+  is_homed_ = false;
 
   last_controller_transform_.reset();
 }
@@ -144,13 +152,20 @@ void PoseTeleoperation::trigger_homing()
 {
   stop_teleoperation();
 
-  if (!switch_controller_client_->service_is_ready()) {
+  if (!switch_controller_client_->service_is_ready())
+  {
     RCLCPP_ERROR(this->get_logger(), "Switch controller service not available");
     return;
   }
 
-  if (!follow_joint_trajectory_client_->action_server_is_ready()) {
+  if (!follow_joint_trajectory_client_->action_server_is_ready())
+  {
     RCLCPP_ERROR(this->get_logger(), "Follow joint trajectory action server not available");
+    return;
+  }
+
+  if (is_homed_)
+  {
     return;
   }
 
@@ -162,59 +177,73 @@ void PoseTeleoperation::trigger_homing()
   switch_req->activate_asap = true;
 
   switch_controller_client_->async_send_request(
-    switch_req,
-    [this](rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedFuture future) {
-      try {
-        auto response = future.get();
-        if (!response->ok) {
-          RCLCPP_ERROR(this->get_logger(), "Failed to switch controllers (to joint): %s", response->message.c_str());
+      switch_req, [this](rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedFuture future) {
+        try
+        {
+          auto response = future.get();
+          if (!response->ok)
+          {
+            RCLCPP_ERROR(this->get_logger(), "Failed to switch controllers (to joint): %s", response->message.c_str());
+            return;
+          }
+        }
+        catch (const std::exception& e)
+        {
+          RCLCPP_ERROR(this->get_logger(), "Service call failed: %s", e.what());
           return;
         }
-      } catch (const std::exception & e) {
-        RCLCPP_ERROR(this->get_logger(), "Service call failed: %s", e.what());
-        return;
-      }
 
-      // 2. Move to home
-      auto goal_msg = control_msgs::action::FollowJointTrajectory::Goal();
-      goal_msg.trajectory.joint_names = params_.home.joint_names;
-      
-      trajectory_msgs::msg::JointTrajectoryPoint point;
-      point.positions = params_.home.joint_positions;
-      point.time_from_start = rclcpp::Duration::from_seconds(5.0); // [TODO] make configurable (maybe use velocity)
-      goal_msg.trajectory.points.push_back(point);
+        // 2. Move to home
+        auto goal_msg = control_msgs::action::FollowJointTrajectory::Goal();
+        goal_msg.trajectory.joint_names = params_.home.joint_names;
 
-      auto send_goal_options = rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SendGoalOptions();
-      send_goal_options.result_callback = [this](const rclcpp_action::ClientGoalHandle<control_msgs::action::FollowJointTrajectory>::WrappedResult & result) {
-        if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
-          RCLCPP_ERROR(this->get_logger(), "Homing trajectory failed");
-        }
+        trajectory_msgs::msg::JointTrajectoryPoint point;
+        point.positions = params_.home.joint_positions;
+        point.time_from_start = rclcpp::Duration::from_seconds(5.0);  // [TODO] make configurable (maybe use velocity)
+        goal_msg.trajectory.points.push_back(point);
 
-        // 3. Switch back to cartesian controller
-        auto switch_req_back = std::make_shared<controller_manager_msgs::srv::SwitchController::Request>();
-        switch_req_back->activate_controllers.push_back(params_.cartesian_controller_name);
-        switch_req_back->deactivate_controllers.push_back(params_.home.joint_controller_name);
-        switch_req_back->strictness = controller_manager_msgs::srv::SwitchController::Request::STRICT;
-        switch_req_back->activate_asap = true;
-
-        switch_controller_client_->async_send_request(
-          switch_req_back,
-          [this](rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedFuture future_back) {
-            try {
-              auto response_back = future_back.get();
-              if (!response_back->ok) {
-                RCLCPP_ERROR(this->get_logger(), "Failed to switch controllers (to cartesian): %s", response_back->message.c_str());
-                return;
+        auto send_goal_options = rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SendGoalOptions();
+        send_goal_options.result_callback =
+            [this](const rclcpp_action::ClientGoalHandle<control_msgs::action::FollowJointTrajectory>::WrappedResult&
+                       result) {
+              if (result.code != rclcpp_action::ResultCode::SUCCEEDED)
+              {
+                is_homed_ = false;
+                RCLCPP_ERROR(this->get_logger(), "Homing trajectory failed");
               }
-              RCLCPP_INFO(this->get_logger(), "Homing completed successfully");
-            } catch (const std::exception & e) {
-              RCLCPP_ERROR(this->get_logger(), "Service call failed: %s", e.what());
-            }
-          });
-      };
 
-      follow_joint_trajectory_client_->async_send_goal(goal_msg, send_goal_options);
-    });
+              is_homed_ = true;
+
+              // 3. Switch back to cartesian controller
+              auto switch_req_back = std::make_shared<controller_manager_msgs::srv::SwitchController::Request>();
+              switch_req_back->activate_controllers.push_back(params_.cartesian_controller_name);
+              switch_req_back->deactivate_controllers.push_back(params_.home.joint_controller_name);
+              switch_req_back->strictness = controller_manager_msgs::srv::SwitchController::Request::STRICT;
+              switch_req_back->activate_asap = true;
+
+              switch_controller_client_->async_send_request(
+                  switch_req_back,
+                  [this](rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedFuture future_back) {
+                    try
+                    {
+                      auto response_back = future_back.get();
+                      if (!response_back->ok)
+                      {
+                        RCLCPP_ERROR(this->get_logger(), "Failed to switch controllers (to cartesian): %s",
+                                     response_back->message.c_str());
+                        return;
+                      }
+                      RCLCPP_INFO(this->get_logger(), "Homing completed successfully");
+                    }
+                    catch (const std::exception& e)
+                    {
+                      RCLCPP_ERROR(this->get_logger(), "Service call failed: %s", e.what());
+                    }
+                  });
+            };
+
+        follow_joint_trajectory_client_->async_send_goal(goal_msg, send_goal_options);
+      });
 }
 
 std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame_transform()
@@ -222,15 +251,15 @@ std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame
   params_ = param_listener_->get_params();
   geometry_msgs::msg::TransformStamped v_T_c_msg;
 
-  try {
-    v_T_c_msg = tf_buffer_->lookupTransform(
-      params_.virtual_world_frame_id,
-      params_.controller_frame_id,
-      tf2::TimePointZero);
-  } catch (const tf2::TransformException & ex) {
-    throw std::runtime_error(
-      "Could not transform " + params_.virtual_world_frame_id + " to " +
-        params_.controller_frame_id + ": " + ex.what());
+  try
+  {
+    v_T_c_msg =
+        tf_buffer_->lookupTransform(params_.virtual_world_frame_id, params_.controller_frame_id, tf2::TimePointZero);
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    throw std::runtime_error("Could not transform " + params_.virtual_world_frame_id + " to " +
+                             params_.controller_frame_id + ": " + ex.what());
   }
 
   geometry_msgs::msg::TransformStamped b_T_v_msg;
@@ -254,7 +283,8 @@ std::optional<geometry_msgs::msg::TransformStamped> PoseTeleoperation::get_frame
 
 void PoseTeleoperation::broadcast_frame_transform()
 {
-  if (!frame_transform_) {
+  if (!frame_transform_)
+  {
     // Silently ignore, since calibration has not been performed
     return;
   }
@@ -265,83 +295,77 @@ void PoseTeleoperation::broadcast_frame_transform()
 
 void PoseTeleoperation::publish_target_pose()
 {
-  if (!frame_transform_ || !delta_) {
+  if (!frame_transform_ || !delta_)
+  {
     // Silently ignore, since teleoperation is not active
     return;
   }
 
   tf2::Transform b_T_c, b_T_e, target;
 
-  try {
-    auto b_T_c_msg = tf_buffer_->lookupTransform(
-      params_.base_frame_id,
-      params_.controller_frame_id,
-      tf2::TimePointZero);
+  try
+  {
+    auto b_T_c_msg =
+        tf_buffer_->lookupTransform(params_.base_frame_id, params_.controller_frame_id, tf2::TimePointZero);
     tf2::fromMsg(b_T_c_msg.transform, b_T_c);
-    
-  } catch (const tf2::TransformException & ex) {
-    throw std::runtime_error(
-      "Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id + ": " +
-        ex.what());
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    throw std::runtime_error("Could not transform " + params_.base_frame_id + " to " + params_.controller_frame_id +
+                             ": " + ex.what());
   }
 
   geometry_msgs::msg::PoseStamped msg;
   msg.header.stamp = this->now();
   msg.header.frame_id = params_.base_frame_id;
 
-  if (params_.use_relative_pose) {
-    if (!last_controller_transform_) {
+  if (params_.use_relative_pose)
+  {
+    if (!last_controller_transform_)
+    {
       last_controller_transform_ = b_T_c;
       return;
     }
 
-    try {
-      auto b_T_e_msg = tf_buffer_->lookupTransform(
-        params_.base_frame_id,
-        params_.end_effector_frame_id,
-        tf2::TimePointZero).transform;
+    try
+    {
+      auto b_T_e_msg =
+          tf_buffer_->lookupTransform(params_.base_frame_id, params_.end_effector_frame_id, tf2::TimePointZero)
+              .transform;
       tf2::fromMsg(b_T_e_msg, b_T_e);
-    } catch (const tf2::TransformException & ex) {
-      throw std::runtime_error(
-        "Could not transform " + params_.base_frame_id + " to " + params_.end_effector_frame_id + ": " +
-          ex.what());
+    }
+    catch (const tf2::TransformException& ex)
+    {
+      throw std::runtime_error("Could not transform " + params_.base_frame_id + " to " + params_.end_effector_frame_id +
+                               ": " + ex.what());
     }
 
     tf2::Transform delta = last_controller_transform_->inverse() * b_T_c;
-    
+
     target = b_T_e * delta.inverse();
 
     last_controller_transform_ = b_T_c;
-  } else {
+  }
+  else
+  {
     target.setOrigin(b_T_c.getOrigin() - delta_->getOrigin());
     target.setRotation(b_T_c.getRotation() * delta_->getRotation().inverse());
   }
 
-    tf2::Vector3 pos = target.getOrigin();
-    tf2::Quaternion rot = target.getRotation();
+  tf2::Vector3 pos = target.getOrigin();
+  tf2::Quaternion rot = target.getRotation();
 
-  if (params_.bounds.enabled) {
-      pos.setX(
-        std::clamp(
-          pos.x(),
-          params_.bounds.x_min,
-          params_.bounds.x_max));
-      pos.setY(
-        std::clamp(
-          pos.y(),
-          params_.bounds.y_min,
-          params_.bounds.y_max));
-      pos.setZ(
-        std::clamp(
-          pos.z(),
-          params_.bounds.z_min,
-          params_.bounds.z_max));
-    }
+  if (params_.bounds.enabled)
+  {
+    pos.setX(std::clamp(pos.x(), params_.bounds.x_min, params_.bounds.x_max));
+    pos.setY(std::clamp(pos.y(), params_.bounds.y_min, params_.bounds.y_max));
+    pos.setZ(std::clamp(pos.z(), params_.bounds.z_min, params_.bounds.z_max));
+  }
 
-    msg.pose.position.x = pos.x();
-    msg.pose.position.y = pos.y();
-    msg.pose.position.z = pos.z();
-    msg.pose.orientation = tf2::toMsg(rot);
+  msg.pose.position.x = pos.x();
+  msg.pose.position.y = pos.y();
+  msg.pose.position.z = pos.z();
+  msg.pose.orientation = tf2::toMsg(rot);
 
   pose_pub_->publish(msg);
 }

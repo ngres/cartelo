@@ -1,7 +1,7 @@
 gripper_teleoperation:
   controller_frame_id:
     type: string
-    default_value: "right_hand"
+    default_value: ""
     description: "Frame ID for the 3D tracking controller"
 
   joystick:

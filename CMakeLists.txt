@@ -31,6 +31,7 @@ generate_parameter_library(
 add_library(pose_teleoperation_component SHARED
   src/pose_teleoperation.cpp
   src/joystick_handler.cpp
+  src/homing_handler.cpp
 )
 target_include_directories(pose_teleoperation_component PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

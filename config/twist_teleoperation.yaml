@@ -1,12 +1,8 @@
-pose_teleoperation:
-  virtual_world_frame_id:
-    type: string
-    default_value: "virtual_world"
-    description: "Frame ID for the virtual world (reference frame for the 3D tracking controller)"
-  controller_frame_id:
+twist_teleoperation:
+  joystick_frame_id:
     type: string
     default_value: ""
-    description: "Frame ID for the 3D tracking controller"
+    description: "Frame ID for the spacemouse"
   base_frame_id:
     type: string
     default_value: "base_link"
@@ -16,29 +12,11 @@ pose_teleoperation:
     default_value: "gripper_link"
     description: "Frame ID for the robot arm end effector"
 
-  use_relative_pose:
-    type: bool
-    default_value: False
-    description: "Use relative poses for teleoperation (if false, absolute poses are used)"
-
   joystick:
-    calibrate_button:
-      type: int
-      default_value: 7
-      description: "Button to calibrate the frame"
-    teleoperate_button:
-      type: int
-      default_value: 2
-      description: "Button to start/stop teleoperation (while being pressed)"
     home_button:
       type: int
       default_value: 3
       description: "Button to home the end effector"
-
-  frame_transform:
-    type: double_array
-    default_value: [0.0, 0.0, 0.0, 1.5707963, -1.5707963, 0]
-    description: "Transform between the robot base and the controller frame to calibrate the world frame ([x, y, z, roll, pitch, yaw] in meters and radians)"
 
   home:
     joint_controller_name:

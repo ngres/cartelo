@@ -28,6 +28,7 @@
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "cartelo/pose_teleoperation_parameters.hpp"
 #include "cartelo/joystick_handler.hpp"
+#include "cartelo/homing_handler.hpp"
 
 namespace cartelo
 {
@@ -100,8 +101,7 @@ private:
 
   bool is_homed_{ false };
 
-  rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr switch_controller_client_;
-  rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr follow_joint_trajectory_client_;
+  std::shared_ptr<HomingHandler> homing_handler_;
 };
 
 }  // namespace cartelo

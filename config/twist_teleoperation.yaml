@@ -46,6 +46,11 @@ twist_teleoperation:
     default_value: "cartesian_motion_controller"
     description: "Name of the Cartesian controller to use for teleoperation"
 
+  frame_rotation:
+    type: double_array
+    default_value: [1.5707963, -1.5707963, 0]
+    description: "Rotation to apply to the robot base frame for teleoperation ([roll, pitch, yaw] in radians)"
+
   bounds:
     enabled:
       type: bool

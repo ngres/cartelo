@@ -84,6 +84,9 @@ private:
   tf2::Vector3 pos_;
   tf2::Quaternion rot_;
 
+  // Rotation transform applied to the input frame
+  tf2::Matrix3x3 frame_rot_;
+
   // Time tracking for integration
   rclcpp::Time last_twist_time_;
   bool first_twist_received_{ false };

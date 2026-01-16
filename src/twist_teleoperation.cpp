@@ -17,6 +17,7 @@
 #include <chrono>
 #include <exception>
 #include <cmath>
+#include <tf2/LinearMath/Vector3.hpp>
 
 #include "rclcpp_components/register_node_macro.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
@@ -82,15 +83,11 @@ void TwistTeleoperation::startup()
     geometry_msgs::msg::TransformStamped start;
     start = tf_buffer_->lookupTransform(params_.base_frame_id, params_.end_effector_frame_id, tf2::TimePointZero);
 
-    pos_.setX(start.transform.translation.x);
-    pos_.setY(start.transform.translation.y);
-    pos_.setZ(start.transform.translation.z);
+    tf2::fromMsg(start.transform.translation, pos_);
+    tf2::fromMsg(start.transform.rotation, rot_);
 
-    rot_.setX(start.transform.rotation.x);
-    rot_.setY(start.transform.rotation.y);
-    rot_.setZ(start.transform.rotation.z);
-    rot_.setW(start.transform.rotation.w);
-
+    frame_rot_.setRPY(params_.frame_rotation[0], params_.frame_rotation[1], params_.frame_rotation[2]);
+    
     startup_done_ = true;
     RCLCPP_INFO(this->get_logger(), "TwistTeleoperation startup successful. Initialized at robot pose.");
   }
@@ -119,21 +116,20 @@ void TwistTeleoperation::twist_callback(const geometry_msgs::msg::Twist::SharedP
   last_twist_time_ = now;
 
   // Position update
-  pos_.setX(pos_.x() + msg->linear.x * dt);
-  pos_.setY(pos_.y() + msg->linear.y * dt);
-  pos_.setZ(pos_.z() + msg->linear.z * dt);
+  tf2::Vector3 linear;
+  tf2::fromMsg(msg->linear, linear);
+  pos_ += frame_rot_ * linear * dt;
 
   // Orientation update
-  double wx = msg->angular.x;
-  double wy = msg->angular.y;
-  double wz = msg->angular.z;
+  tf2::Vector3 angular;
+  tf2::fromMsg(msg->angular, angular);
+  angular = frame_rot_ * angular;
 
-  double angle = std::sqrt(wx * wx + wy * wy + wz * wz) * dt;
+  double angle = angular.length() * dt;
   if (angle > 1e-6)
   {
-    tf2::Vector3 axis(wx, wy, wz);
-    axis.normalize();
-    tf2::Quaternion delta_q(axis, angle);
+    angular.normalize();
+    tf2::Quaternion delta_q(angular, angle);
     rot_ = delta_q * rot_;
     rot_.normalize();
   }
@@ -176,14 +172,14 @@ void TwistTeleoperation::trigger_homing()
     return;
   }
 
-  // [TODO] make sure to reset all values to prevent erradic movements
+  // Re-startup/reset state to current actual robot pose
+  startup_done_ = false;
+  first_twist_received_ = false;
 
   homing_handler_->trigger_homing([this](bool success) {
     if (success)
     {
       is_homed_ = true;
-      // Re-startup/reset state to current actual robot pose
-      startup_done_ = false;
       // Restart startup timer to recapture pose
       startup_timer_->reset();
     }

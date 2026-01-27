@@ -149,7 +149,7 @@ void PoseTeleoperation::start_teleoperation()
 
   is_homed_ = false;
 
-  current_input_pose_.reset();
+  is_first_run_ = true;
 }
 
 void PoseTeleoperation::stop_teleoperation()

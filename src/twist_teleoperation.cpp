@@ -147,15 +147,6 @@ void TwistTeleoperation::publish_target_pose()
   geometry_msgs::msg::PoseStamped msg;
   msg.header.stamp = this->now();
   msg.header.frame_id = params_.base_frame_id;
-
-  // Apply bounds
-  if (params_.bounds.enabled)
-  {
-    pos_.setX(std::clamp(pos_.x(), params_.bounds.x_min, params_.bounds.x_max));
-    pos_.setY(std::clamp(pos_.y(), params_.bounds.y_min, params_.bounds.y_max));
-    pos_.setZ(std::clamp(pos_.z(), params_.bounds.z_min, params_.bounds.z_max));
-  }
-
   msg.pose.position.x = pos_.x();
   msg.pose.position.y = pos_.y();
   msg.pose.position.z = pos_.z();

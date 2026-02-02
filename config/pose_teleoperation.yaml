@@ -60,33 +60,3 @@ pose_teleoperation:
     default_value: 0.9
     validation:
       bounds<>: [0.01, 1.0]
-
-  bounds:
-    enabled:
-      type: bool
-      default_value: false
-      description: "Enable boundary limits for the end effector position based on the base frame"
-    x_min:
-      type: double
-      default_value: -0.5
-      description: "Minimum X position for the end effector in meters"
-    x_max:
-      type: double
-      default_value: 0.5
-      description: "Maximum X position for the end effector in meters"
-    y_min:
-      type: double
-      default_value: -0.5
-      description: "Minimum Y position for the end effector in meters"
-    y_max:
-      type: double
-      default_value: 0.5
-      description: "Maximum Y position for the end effector in meters"
-    z_min:
-      type: double
-      default_value: 0.0
-      description: "Minimum Z position for the end effector in meters"
-    z_max:
-      type: double
-      default_value: 1.0
-      description: "Maximum Z position for the end effector in meters"

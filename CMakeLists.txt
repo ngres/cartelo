@@ -33,6 +33,11 @@ generate_parameter_library(
   "config/twist_teleoperation.yaml"
 )
 
+generate_parameter_library(
+  cartesian_bounds_parameters
+  "config/cartesian_bounds.yaml"
+)
+
 add_library(pose_teleoperation_component SHARED
   src/pose_teleoperation.cpp
   src/joystick_handler.cpp
@@ -59,6 +64,18 @@ target_include_directories(twist_teleoperation_component PUBLIC
 target_compile_features(twist_teleoperation_component PUBLIC c_std_99 cxx_std_17)
 target_link_libraries(twist_teleoperation_component
   twist_teleoperation_parameters
+)
+
+add_library(cartesian_bounds_component SHARED
+  src/cartesian_bounds.cpp
+)
+target_include_directories(cartesian_bounds_component PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_features(cartesian_bounds_component PUBLIC c_std_99 cxx_std_17)
+target_link_libraries(cartesian_bounds_component
+  cartesian_bounds_parameters
 )
 
 add_library(gripper_teleoperation_component SHARED
@@ -100,6 +117,14 @@ ament_target_dependencies(twist_teleoperation_component
 
 rclcpp_components_register_node(twist_teleoperation_component PLUGIN "cartelo::TwistTeleoperation" EXECUTABLE twist_teleoperation_node)
 
+ament_target_dependencies(cartesian_bounds_component
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+)
+
+rclcpp_components_register_node(cartesian_bounds_component PLUGIN "cartelo::CartesianBounds" EXECUTABLE cartesian_bounds_node)
+
 ament_target_dependencies(gripper_teleoperation_component
   rclcpp
   rclcpp_components
@@ -122,7 +147,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(TARGETS pose_teleoperation_component twist_teleoperation_component gripper_teleoperation_component
+install(TARGETS pose_teleoperation_component twist_teleoperation_component gripper_teleoperation_component cartesian_bounds_component
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

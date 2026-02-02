@@ -236,13 +236,6 @@ void PoseTeleoperation::publish_target_pose()
   tf2::Vector3 pos = target.getOrigin();
   tf2::Quaternion rot = target.getRotation();
 
-  if (params_.bounds.enabled)
-  {
-    pos.setX(std::clamp(pos.x(), params_.bounds.x_min, params_.bounds.x_max));
-    pos.setY(std::clamp(pos.y(), params_.bounds.y_min, params_.bounds.y_max));
-    pos.setZ(std::clamp(pos.z(), params_.bounds.z_min, params_.bounds.z_max));
-  }
-
   const double alpha = params_.smoothing_factor; // Add this to your ROS parameters
 
   if (is_first_run_) {

@@ -236,13 +236,21 @@ void PoseTeleoperation::publish_target_pose()
   tf2::Vector3 pos = target.getOrigin();
   tf2::Quaternion rot = target.getRotation();
 
-  const double alpha = params_.smoothing_factor; // Add this to your ROS parameters
+  const double alpha = params_.filter.smoothing_factor; // Add this to your ROS parameters
 
   if (is_first_run_) {
       smoothed_pos_ = pos;
       smoothed_rot_ = rot;
       is_first_run_ = false;
   } else {
+      if (
+        abs(smoothed_pos_.getX() - pos.getX()) > params_.filter.error.x ||
+        abs(smoothed_pos_.getY() - pos.getY()) > params_.filter.error.y ||
+        abs(smoothed_pos_.getZ() - pos.getZ()) > params_.filter.error.z
+      ) {
+        RCLCPP_WARN(this->get_logger(), "Input delta exeeded position error filter. Ignore command.");
+        return;
+      } 
       smoothed_pos_ = smoothed_pos_.lerp(pos, alpha);
       smoothed_rot_ = smoothed_rot_.slerp(rot, alpha);
   }

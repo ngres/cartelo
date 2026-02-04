@@ -35,6 +35,27 @@ pose_teleoperation:
     default_value: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     description: "Transform between the robot base and the controller frame to calibrate the world frame ([x, y, z, roll, pitch, yaw] in meters and radians)"
 
+  filter:
+    error:
+      x: 
+        type: double
+        default_value: 0.2
+        description: "Ignore all inputs which deviate by a given distance in the x axis from the previous command."
+      y: 
+        type: double
+        default_value: 0.2
+        description: "Ignore all inputs which deviate by a given distance in the x axis from the previous command."
+      z: 
+        type: double
+        default_value: 0.2
+        description: "Ignore all inputs which deviate by a given distance in the x axis from the previous command."
+    smoothing_factor:
+      type: double
+      description: "Smoothing factor between 1.0 (no smoothing) and 0.1 (high smooting, with latency)"
+      default_value: 0.9
+      validation:
+        bounds<>: [0.01, 1.0]
+
   home:
     joint_controller_name:
       type: string
@@ -53,10 +74,3 @@ pose_teleoperation:
     type: string
     default_value: "cartesian_motion_controller"
     description: "Name of the Cartesian controller to use for teleoperation"
-
-  smoothing_factor:
-    type: double
-    description: "Smoothing factor between 1.0 (no smoothing) and 0.1 (high smooting, with latency)"
-    default_value: 0.9
-    validation:
-      bounds<>: [0.01, 1.0]

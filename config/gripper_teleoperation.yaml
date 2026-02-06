@@ -39,6 +39,11 @@ gripper_teleoperation:
     default_value: "~/gripper_cmd"
     description: "Topic to send gripper command actions to"
 
+  gripper_max_effort:
+    type: double
+    default_value: -1.0
+    description: "Max effort for the gripper controller. If negative, it will be ignored."
+
   joint_name:
     type: string
     default_value: "gripper"

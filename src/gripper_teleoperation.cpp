@@ -103,6 +103,9 @@ void GripperTeleoperation::send_command()
   goal_msg.command.name.push_back(params_.joint_name);
   goal_msg.command.position.push_back(current_state_ * params_.max_target_value +
     (1.0 - current_state_) * params_.min_target_value);
+  if (params_.gripper_max_effort > 0.0) {
+    goal_msg.command.effort.push_back(params_.gripper_max_effort)
+  }
   gripper_client_->async_send_goal(goal_msg);
 }
 

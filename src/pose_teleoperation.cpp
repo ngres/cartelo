@@ -255,9 +255,9 @@ void PoseTeleoperation::publish_target_pose()
       smoothed_rot_ = smoothed_rot_.slerp(rot, alpha);
   }
 
-  msg.pose.position.x = smoothed_pos_.x();
-  msg.pose.position.y = smoothed_pos_.y();
-  msg.pose.position.z = smoothed_pos_.z();
+  msg.pose.position.x = std::clamp(smoothed_pos_.x(), params_.bounds.x_min, params_.bounds.x_max);
+  msg.pose.position.y = std::clamp(smoothed_pos_.y(), params_.bounds.y_min, params_.bounds.y_max);
+  msg.pose.position.z = std::clamp(smoothed_pos_.z(), params_.bounds.z_min, params_.bounds.z_max);
   msg.pose.orientation = tf2::toMsg(smoothed_rot_);
 
   pose_pub_->publish(msg);

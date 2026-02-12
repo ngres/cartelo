@@ -120,6 +120,12 @@ void TwistTeleoperation::twist_callback(const geometry_msgs::msg::Twist::SharedP
   tf2::fromMsg(msg->linear, linear);
   pos_ += frame_rot_ * linear * dt;
 
+  if (params_.bounds.enabled) {
+    pos_.setX(std::clamp(pos_.x(), params_.bounds.x_min, params_.bounds.x_max));
+    pos_.setY(std::clamp(pos_.y(), params_.bounds.y_min, params_.bounds.y_max));
+    pos_.setZ(std::clamp(pos_.z(), params_.bounds.z_min, params_.bounds.z_max));
+  }
+
   // Orientation update
   tf2::Vector3 angular;
   tf2::fromMsg(msg->angular, angular);

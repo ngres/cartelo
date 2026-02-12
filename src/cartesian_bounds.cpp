@@ -48,9 +48,9 @@ void CartesianBounds::input_pose_callback(const geometry_msgs::msg::PoseStamped:
   geometry_msgs::msg::PoseStamped clipped_msg = *msg;
 
   // Apply bounds
-  clipped_msg.pose.position.x = std::clamp(msg->pose.position.x, params_.x_min, params_.x_max);
-  clipped_msg.pose.position.y = std::clamp(msg->pose.position.y, params_.y_min, params_.y_max);
-  clipped_msg.pose.position.z = std::clamp(msg->pose.position.z, params_.z_min, params_.z_max);
+  clipped_msg.pose.position.x = std::clamp(msg->pose.position.x, params_.bounds.x_min, params_.bounds.x_max);
+  clipped_msg.pose.position.y = std::clamp(msg->pose.position.y, params_.bounds.y_min, params_.bounds.y_max);
+  clipped_msg.pose.position.z = std::clamp(msg->pose.position.z, params_.bounds.z_min, params_.bounds.z_max);
 
   clipped_pose_pub_->publish(clipped_msg);
 }

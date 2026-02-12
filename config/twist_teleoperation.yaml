@@ -51,3 +51,33 @@ twist_teleoperation:
     default_value: [1.5707963, -1.5707963, 0]
     description: "Rotation to apply to the robot base frame for teleoperation ([roll, pitch, yaw] in radians)"
 
+  bounds:
+    enabled:
+      type: bool
+      default_value: false
+      description: "If cartesian bounds should be enabled"
+    x_min:
+      type: double
+      default_value: -0.5
+      description: "Minimum X position for the end effector in meters"
+    x_max:
+      type: double
+      default_value: 0.5
+      description: "Maximum X position for the end effector in meters"
+    y_min:
+      type: double
+      default_value: -0.5
+      description: "Minimum Y position for the end effector in meters"
+    y_max:
+      type: double
+      default_value: 0.5
+      description: "Maximum Y position for the end effector in meters"
+    z_min:
+      type: double
+      default_value: 0.0
+      description: "Minimum Z position for the end effector in meters"
+    z_max:
+      type: double
+      default_value: 1.0
+      description: "Maximum Z position for the end effector in meters"
+

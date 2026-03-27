@@ -54,6 +54,8 @@ TwistTeleoperation::TwistTeleoperation(const rclcpp::NodeOptions& options) : Nod
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("target_pose", 3);
   twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
       params_.twist_topic, 1, std::bind(&TwistTeleoperation::twist_callback, this, std::placeholders::_1));
+  external_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+      "external_pose", 1, std::bind(&TwistTeleoperation::external_pose_callback, this, std::placeholders::_1));
 
   double period = 1.0 / params_.update_rate;
   publish_timer_ = this->create_wall_timer(std::chrono::duration<double>(period),
@@ -105,15 +107,16 @@ void TwistTeleoperation::twist_callback(const geometry_msgs::msg::Twist::SharedP
   }
 
   rclcpp::Time now = this->now();
+
   if (!first_twist_received_)
   {
-    last_twist_time_ = now;
+    last_time_ = now;
     first_twist_received_ = true;
     return;  // Do not integrate on first packet to avoid large dt issues
   }
 
-  double dt = (now - last_twist_time_).seconds();
-  last_twist_time_ = now;
+  double dt = (now - last_time_).seconds();
+  last_time_ = now;
 
   // Position update
   tf2::Vector3 linear;
@@ -138,6 +141,11 @@ void TwistTeleoperation::twist_callback(const geometry_msgs::msg::Twist::SharedP
     tf2::Quaternion delta_q(angular, angle);
     rot_ = delta_q * rot_;
     rot_.normalize();
+
+    if (linear.length() > 0.01)
+    {
+      last_twist_time_ = this->now();
+    }
   }
 
   is_homed_ = false;
@@ -181,6 +189,40 @@ void TwistTeleoperation::trigger_homing()
       startup_timer_->reset();
     }
   });
+}
+
+void TwistTeleoperation::external_pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+  if (!startup_done_ || (first_twist_received_ && (this->now() - last_twist_time_).seconds() < 1.0))
+  {
+    return;
+  }
+
+  try
+  {
+    geometry_msgs::msg::PoseStamped msg_transformed;
+    if (msg->header.frame_id != params_.base_frame_id)
+    {
+       msg_transformed = tf_buffer_->transform(*msg, params_.base_frame_id);
+    }
+    else
+    {
+      msg_transformed = *msg;
+    }
+
+    tf2::fromMsg(msg_transformed.pose.position, pos_);
+    tf2::fromMsg(msg_transformed.pose.orientation, rot_);
+    
+    // Ensure rotation is normalized
+    rot_.normalize();
+
+    // Reset twist integration time to avoid jumps if we receive a twist right after
+    last_time_ = this->now();
+  }
+  catch (const tf2::TransformException& ex)
+  {
+    RCLCPP_WARN(this->get_logger(), "External pose transform failure: %s", ex.what());
+  }
 }
 
 }  // namespace cartelo

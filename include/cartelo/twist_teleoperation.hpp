@@ -59,6 +59,13 @@ private:
   void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   /**
+   * @brief Update target pose from external source.
+   *
+   * @param msg The external pose message.
+   */
+  void external_pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+
+  /**
    * @brief Publish the target end-effector pose.
    *
    */
@@ -72,6 +79,7 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr external_pose_sub_;
   rclcpp::TimerBase::SharedPtr publish_timer_;
 
   // Timer for startup check
@@ -88,6 +96,8 @@ private:
   tf2::Matrix3x3 frame_rot_;
 
   // Time tracking for integration
+  rclcpp::Time last_time_;
+  // Twist time tracking for external control override
   rclcpp::Time last_twist_time_;
   bool first_twist_received_{ false };
 

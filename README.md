@@ -1,6 +1,6 @@
 # Cartelo
 
-Teleoperate ROS 2 robot arms using cartesian coordinate inputs from 3D trackers (VR controllers, smartphones, etc.).
+Teleoperate ROS 2 robot arms using cartesian coordinate inputs from 3D trackers (VR controllers, smartphones, etc.) and 3D mice (3Dconnexion SpaceMouse).
 
 > [!WARNING]
 > This project is still under construction 🚧
@@ -20,7 +20,7 @@ flowchart LR
     c --> g
 ```
 
-Cartelo can take any [tf2](https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Tf2/Tf2-Main.html) frame and an optional `Joy` topic and output a desired target pose to an inverse kinematic node (like MoveIt2 Servo, Cartesian Controllers, CRISP Controllers, etc.).
+Cartelo can take any `PoseStamped` or `TwistStamped` and an optional `Joy` message and output a desired target pose to an Cartesian controller (e.g. FZI Cartesian Controllers, CRISP Controllers, etc.).
 
 To start teleportation, the operator can move the 3D tracking device close to the robot base and press the preconfigured calibration button (i.e. menu button). 
 Now all movements will be transferred to the robot as long as the teleportation button (i.e. side grippers) is pressed down.
